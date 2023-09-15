@@ -1,9 +1,10 @@
 import cv2
 import numpy as np
-
+import math
 class MarkerDetector:
-    def __init__(self, init_frame: np.ndarray, marker_width: float = 0.10) -> None:
-        self.marker_width = marker_width
+    def __init__(self, init_frame: np.ndarray, target_marker_width: float = 0.10, nav_marker_width: float = 0.27) -> None:
+        self.target_marker_width = target_marker_width
+        self.nav_marker_width = nav_marker_width
         self.height, self.width = init_frame.shape[:2]
         self.dict_aruco_target = cv2.aruco.Dictionary_get(cv2.aruco.DICT_4X4_50)
         self.dict_aruco_nav = cv2.aruco.Dictionary_get(cv2.aruco.DICT_5X5_50)
@@ -62,23 +63,44 @@ class MarkerDetector:
             cv2.putText(frame, marker_label, (x, y + 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
 
     def estimate_pose_and_draw_axes(self, frame: np.ndarray, corners: np.array, ids: list, marker_type: str):
-        marker_info = []
+        marker_info = []  # Define this at the beginning of your method
+
         if ids is None:
-            return marker_info
+            return
+
+        # Determine the marker width based on the type of marker
+        marker_width = self.target_marker_width if marker_type == "Target" else self.nav_marker_width
+
         rotations_vecs, translation_vecs, _ = cv2.aruco.estimatePoseSingleMarkers(
-            corners, self.marker_width, self.matrix, self.distortion
+            corners, marker_width, self.matrix, self.distortion
         )
+
         for i, (corner, rot_vec, tran_vec) in enumerate(zip(corners, rotations_vecs, translation_vecs)):
             aruco_id = ids[i][0]
             z_string = f"{tran_vec[0][2]:.2f}"
             x_offset = corner[0][:, 0].mean() - self.width / 2
             marker_info.append({
-                'id': aruco_id,
-                'distance': z_string,
-                'x_offset': x_offset
+                'id': int(aruco_id),
+                'distance': float(z_string),
+                'x_offset': float(x_offset)
             })
-        return marker_info
 
+        return marker_info
+    
+def calculate_actual_distance_and_angle(pixel_offset, z_distance, focal_length):
+    # Calculate the actual lateral offset (X) in meters
+    X = (pixel_offset * z_distance) / focal_length
+    
+    # Calculate the angle (theta) in radians
+    theta_rad = math.atan(X / z_distance)
+    
+    # Convert the angle to degrees if needed
+    theta_deg = math.degrees(theta_rad)
+    
+    # Calculate the actual distance (D) in meters
+    D = math.sqrt(X**2 + z_distance**2)
+    
+    return D, theta_deg
 # Initialize the camera
 cap = cv2.VideoCapture(0)
 
@@ -89,7 +111,7 @@ if not ret:
     exit()
 
 # Initialize the marker detector
-marker_detector = MarkerDetector(init_frame, marker_width=0.18)
+marker_detector = MarkerDetector(init_frame, target_marker_width=0.10, nav_marker_width=0.27)
 
 while True:
     ret, frame = cap.read()
@@ -98,13 +120,20 @@ while True:
         break
 
     processed_frame, marker_data = marker_detector.process_frame(frame)
-    for info in marker_data['Target']:
-        print(f"Target ID: {info['id']}, Distance: {info['distance']}, X Offset: {info['x_offset']}")
-    for info in marker_data['Navigation']:
-        print(f"Navigation ID: {info['id']}, Distance: {info['distance']}, X Offset: {info['x_offset']}")
+    
+    if marker_data['Target'] is not None:  # Check if not None before iterating
+        for info in marker_data['Target']:
+            print(f"Target ID: {info['id']}, Distance: {info['distance']}, X Offset: {info['x_offset']}")
+            print(calculate_actual_distance_and_angle(info['x_offset'], info['distance'], 50))
+            
+    if marker_data['Navigation'] is not None:  # Check if not None before iterating
+        for info in marker_data['Navigation']:
+            print(f"Navigation ID: {info['id']}, Distance: {info['distance']}, X Offset: {info['x_offset']}")
+            
     cv2.imshow("ArUco Markers", processed_frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
+
 
 cap.release()
 cv2.destroyAllWindows()
