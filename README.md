@@ -1,4 +1,3 @@
-
 # Project Title
 
 ## Table of Contents
@@ -36,17 +35,17 @@ Describe what your project is all about.
 
 First, clone the repository to your local machine using git. Open your terminal and run:
 
-\```bash
-git clone https://github.com/your-username/your-repository-name.git
-\```
+```bash
+git clone https://github.com/longovinicius/ABII_Challenge.git
+
 
 #### Navigate to the Project Directory
 
 Change your current directory to the project directory:
 
-\```bash
-cd your-repository-name
-\```
+```bash
+cd ABII_Challenge
+```
 
 #### Create a Virtual Environment (Optional)
 
@@ -54,55 +53,43 @@ It's usually a good idea to create a virtual environment for your projects to av
 
 **For macOS and Linux:**
 
-\```bash
+```bash
 python3 -m venv myenv
-\```
+```
 
 **For Windows:**
 
-\```bash
+```bash
 python -m venv myenv
-\```
+```
 
 To activate the virtual environment:
 
 **For macOS and Linux:**
 
-\```bash
+```bash
 source myenv/bin/activate
-\```
+```
 
 **For Windows:**
 
-\```bash
+```bash
 .\myenv\Scripts\activate
-\```
+```
 
 #### Install Required Packages
 
 Now, install the required packages. In this project, we'll specifically need OpenCV version 4.6.0.66.
 
-\```bash
+```bash
 pip install opencv-contrib-python==4.6.0.66
-\```
+```
 
 #### Run the Program
 
 Now you can run the main program:
 
-\```bash
+```bash
 python main.py
-\```
-
-## Usage
-
-Explain how to use your project and include any necessary code snippets.
-
-## Contributing
-
-Instructions for how to contribute to your project.
-
-## License
-
-Your project's license.
+```
 
